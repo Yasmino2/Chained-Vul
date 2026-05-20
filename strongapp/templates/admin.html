@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Admin Panel</h2>
+
+<p>Welcome, <strong>{{ username }}</strong>. You have full admin privileges.</p>
+
+<br>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Action</th>
+    </tr>
+    {% for user in users %}
+    <tr>
+        <td>{{ user['id'] }}</td>
+        <td>{{ user['username'] }}</td>
+        <td>{{ user['email'] }}</td>
+        <td>
+            <span class="badge {% if user['role'] == 'admin' %}badge-admin{% else %}badge-user{% endif %}">
+                {{ user['role'] }}
+            </span>
+        </td>
+        <td>
+
+            // hena part eny bazwd el csrf token
+            {% if user['role'] != 'admin' %}
+                <form method="POST" action="/promote" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="user_id" value="{{ user['id'] }}">
+                    <button type="submit">Promote to Admin</button>
+                </form>
+            {% else %}
+            <span style="color:#999; font-size:0.85rem;">Already Admin</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

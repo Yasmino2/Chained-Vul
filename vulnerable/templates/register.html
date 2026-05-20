@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Register</h2>
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+<label>Username</label>
+<input type="text" name="username" id="username">
+
+<label>Email</label>
+<input type="email" name="email" id="email">
+
+<label>Password</label>
+<input type="password" name="password" id="password">
+
+<button onclick="submitRegister()">Register</button>
+
+<p>Already have an account? <a href="/login">Login here</a></p>
+
+<script>
+    function submitRegister() {
+        const username = document.getElementById('username').value;
+        const email    = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+        })
+        .then(response => {
+            if (response.ok && response.url.includes('/login')) {
+                window.location.href = '/login';
+            } else {
+                window.location.reload();
+            }
+        });
+    }
+</script>
+
+{% endblock %}

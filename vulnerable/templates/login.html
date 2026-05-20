@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Login</h2>
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+<label>Username</label>
+<input type="text" name="username" id="username">
+
+<label>Password</label>
+<input type="password" name="password" id="password">
+
+<button onclick="submitLogin()">Login</button>
+
+<p>Don't have an account? <a href="/register">Register here</a></p>
+
+<script>
+    function submitLogin() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        })
+        .then(response => {
+            if (response.ok && response.url.includes('/search')) {
+                window.location.href = '/search';
+            } else {
+                return response.text().then(() => {
+                    window.location.reload();
+                });
+            }
+        });
+    }
+</script>
+
+{% endblock %}

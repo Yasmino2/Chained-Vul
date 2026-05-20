@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Search Users</h2>
+
+<p>Logged in as: <strong>{{ username }}</strong> 
+   <span class="badge {% if role == 'admin' %}badge-admin{% else %}badge-user{% endif %}">
+       {{ role }}
+   </span>
+</p>
+
+<br>
+
+<input type="text" id="searchInput" placeholder="Search by username..." value="{{ query }}">
+<button onclick="doSearch()">Search</button>
+
+<br><br>
+
+{% if error %}
+<p class="error">SQL Error: {{ error }}</p>
+{% endif %}
+
+{% if results %}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+    </tr>
+    {% for user in results %}
+    <tr>
+        <td>{{ user['id'] }}</td>
+        <td>{{ user['username'] }}</td>
+        <td>{{ user['email'] }}</td>
+        <td>
+            <span class="badge {% if user['role'] == 'admin' %}badge-admin{% else %}badge-user{% endif %}">
+                {{ user['role'] }}
+            </span>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% elif query %}
+<p>No users found.</p>
+{% endif %}
+
+<script>
+    function doSearch() {
+        const q = document.getElementById('searchInput').value;
+        window.location.href = '/search?q=' + q;
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') doSearch();
+    });
+</script>
+
+{% endblock %}

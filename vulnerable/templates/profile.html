@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>My Profile</h2>
+
+<p>Username: <strong>{{ username }}</strong></p>
+<p>Role: 
+    <span class="badge {% if role == 'admin' %}badge-admin{% else %}badge-user{% endif %}">
+        {{ role }}
+    </span>
+</p>
+
+<br>
+
+{% if msg %}
+<div style="background:#fff3cd; border:1px solid #ffc107; padding:12px; border-radius:5px;">
+    <strong>Message:</strong>
+    <!-- !! VULNERABLE: msg is rendered as raw HTML, not escaped -->
+    <span>{{ msg | safe }}</span>
+</div>
+{% endif %}
+
+<br>
+
+<a href="/search" class="btn btn-blue">Go to Search</a>
+
+{% endblock %}

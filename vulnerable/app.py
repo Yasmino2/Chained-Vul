@@ -1,0 +1,147 @@
+from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3
+import os
+
+app = Flask(__name__)
+app.secret_key = 'supersecretkey'
+
+DB_PATH = os.path.join(os.path.dirname(__file__), 'users.db')
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+#page el home
+@app.route('/')
+def home():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('search'))
+
+
+#page el register
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    error = None
+    if request.method == 'POST':
+        username = request.form['username']
+        email    = request.form['email']
+        password = request.form['password']
+        conn = get_db()
+        try:
+            conn.execute(
+                "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, 'user')",
+                (username, email, password)
+            )
+            conn.commit()
+            return redirect(url_for('login'))
+        except:
+            error = 'Username or email already exists.'
+        finally:
+            conn.close()
+    return render_template('register.html', error=error)
+
+
+#login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM users WHERE username = ? AND password = ?",
+            (username, password)
+        ).fetchone()
+        conn.close()
+        if user:
+            session['username'] = user['username']
+            session['role']     = user['role']
+            session['user_id']  = user['id']
+            return redirect(url_for('search'))
+        else:
+            error = 'Invalid credentials.'
+    return render_template('login.html', error=error)
+
+#logout
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+#vunrablity bt3t el search el hya sql injection
+@app.route('/search')
+def search():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    query   = request.args.get('q', '')
+    results = []
+    error   = None
+
+    if query:
+        try:
+            conn = get_db()
+            # hena byd5ol el query command 3la b3dha lel sql
+            sql = f"SELECT id, username, email, role FROM users WHERE username LIKE '%{query}%'"
+            results = conn.execute(sql).fetchall()
+            conn.close()
+        except Exception as e:
+            error = str(e)
+
+    return render_template('search.html',
+                           query=query,
+                           results=results,
+                           error=error,
+                           username=session['username'],
+                           role=session['role'])
+
+
+#profile page
+@app.route('/profile')
+def profile():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    msg = request.args.get('msg', '')
+    return render_template('profile.html',
+                           username=session['username'],
+                           role=session['role'],
+                           msg=msg)
+
+#admin page
+@app.route('/admin')
+def admin():
+    if 'username' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+    conn = get_db()
+    users = conn.execute("SELECT id, username, email, role FROM users").fetchall()
+    conn.close()
+    return render_template('admin.html',
+                           username=session['username'],
+                           users=users)
+
+
+
+#da lma ba promote el user to admin
+@app.route('/promote', methods=['POST'])
+def promote():
+    if 'username' not in session or session['role'] != 'admin':
+        return redirect(url_for('login'))
+
+    # mafysh csrf token el hya byt2kd en el request f3ln men el admin
+    target_id = request.form.get('user_id')
+    conn = get_db()
+    conn.execute("UPDATE users SET role = 'admin' WHERE id = ?", (target_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin'))
+
+
+if __name__ == '__main__':
+    from database import init_db
+    init_db()
+    app.run(debug=True)
